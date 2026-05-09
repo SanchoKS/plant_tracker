@@ -38,7 +38,7 @@ npm run dev
 
 Или двойной клик на `start_frontend.bat`
 
-Приложение откроется на: http://localhost:5173
+Приложение откроется на: http://localhost:3000
 
 ## Функции
 
