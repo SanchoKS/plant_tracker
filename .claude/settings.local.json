@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "PowerShell(Get-Command node, npm, pnpm, yarn 2>&1)",
+      "Bash(mkdir \"C:\\\\Users\\\\Mi\\\\.claude\\\\projects\\\\c--Users-Mi-Work-plant-tracker\\\\memory\")",
+      "WebFetch(domain:commons.wikimedia.org)",
+      "Bash(Get-Item \"C:\\\\Users\\\\Mi\\\\.claude\\\\projects\\\\c--Users-Mi-Work-plant-tracker\\\\85aa7f93-c096-4237-aeb8-c66624902217.jsonl\")",
+      "Bash(Select-Object Length)",
+      "PowerShell(\\(Get-Item \"C:\\\\Users\\\\Mi\\\\.claude\\\\projects\\\\c--Users-Mi-Work-plant-tracker\\\\85aa7f93-c096-4237-aeb8-c66624902217.jsonl\"\\).Length)",
+      "Bash(python -c \"import docx; print\\('ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python make_report.py)",
+      "Bash(python3 -c ' *)",
+      "PowerShell(python --version)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Mi\\.claude\\projects\\c--Users-Mi-Work-plant-tracker"
+    ]
+  }
+}
