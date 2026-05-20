@@ -77,6 +77,19 @@ export default function MyPlantsPage() {
     }
   }
 
+  const [editingPlant, setEditingPlant] = useState<UserPlant | null>(null)
+
+  const handleUpdate = async (plantId: number, data: { nickname: string; location: string; notes: string }) => {
+    try {
+      await myPlantsApi.update(plantId, data)
+      toast.success('Изменения сохранены')
+      setEditingPlant(null)
+      loadPlants()
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Ошибка')
+    }
+  }
+
   const handleDelete = async (plantId: number) => {
     if (!confirm('Удалить растение?')) return
     try {
@@ -194,11 +207,20 @@ export default function MyPlantsPage() {
               schedule={schedule}
               onAction={handleAction}
               onDelete={handleDelete}
+              onEdit={() => setEditingPlant(plant)}
               onPhotoUpload={handlePhotoUpload}
               onInspect={() => navigate('/diagnostics')}
             />
           ))}
         </div>
+      )}
+
+      {editingPlant && (
+        <EditPlantModal
+          plant={editingPlant}
+          onClose={() => setEditingPlant(null)}
+          onSave={handleUpdate}
+        />
       )}
 
       {/* Add plant link */}
@@ -304,11 +326,88 @@ function PlantInfoModal({ plant, onClose }: { plant: UserPlant; onClose: () => v
   )
 }
 
+function EditPlantModal({
+  plant,
+  onClose,
+  onSave,
+}: {
+  plant: UserPlant
+  onClose: () => void
+  onSave: (id: number, data: { nickname: string; location: string; notes: string }) => Promise<void>
+}) {
+  const [nickname, setNickname] = useState(plant.nickname || '')
+  const [location, setLocation] = useState(plant.location || '')
+  const [notes, setNotes] = useState(plant.notes || '')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!nickname.trim()) return
+    setLoading(true)
+    await onSave(plant.id, { nickname: nickname.trim(), location: location.trim(), notes: notes.trim() })
+    setLoading(false)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white border border-gray-200 shadow-2xl w-full max-w-sm rounded-2xl overflow-hidden">
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+          <span className="font-medium text-sm">✏️ Редактирование</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <p className="text-xs text-gray-400 italic">{plant.catalog_plant.name}</p>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">
+              Название <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-green-500 rounded-lg"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Расположение</label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-green-500 rounded-lg"
+              placeholder="Кухня, гостиная..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Заметки</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-green-500 rounded-lg resize-none"
+              placeholder="Любые заметки о растении..."
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm font-medium transition-colors disabled:opacity-50 rounded-lg"
+          >
+            {loading ? '⏳ ...' : '💾 Сохранить'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function PlantRow({
   plant,
   schedule,
   onAction,
   onDelete,
+  onEdit,
   onPhotoUpload,
   onInspect,
 }: {
@@ -316,6 +415,7 @@ function PlantRow({
   schedule: CareSchedule | null
   onAction: (id: number, type: string) => void
   onDelete: (id: number) => void
+  onEdit: () => void
   onPhotoUpload: (id: number, file: File) => void
   onInspect: () => void
 }) {
@@ -355,6 +455,13 @@ function PlantRow({
             <span className="text-xs text-gray-400">📍 {plant.location}</span>
           )}
         </div>
+        <button
+          onClick={onEdit}
+          className="text-gray-300 hover:text-blue-400 text-xs px-1 transition-colors flex-shrink-0"
+          title="Редактировать"
+        >
+          ✏️
+        </button>
         <button
           onClick={() => onDelete(plant.id)}
           className="text-gray-300 hover:text-red-400 text-xs px-1 transition-colors flex-shrink-0"

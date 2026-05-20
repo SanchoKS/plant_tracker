@@ -35,6 +35,13 @@ def add_plant(
     if not catalog:
         raise HTTPException(status_code=404, detail="Растение не найдено в каталоге")
 
+    duplicate = db.query(models.UserPlant).filter(
+        models.UserPlant.user_id == current_user.id,
+        models.UserPlant.nickname == plant_data.nickname,
+    ).first()
+    if duplicate:
+        raise HTTPException(status_code=400, detail="У вас уже есть растение с таким именем")
+
     plant = models.UserPlant(
         user_id=current_user.id,
         catalog_plant_id=plant_data.catalog_plant_id,
@@ -76,6 +83,15 @@ def update_plant(
     ).first()
     if not plant:
         raise HTTPException(status_code=404, detail="Растение не найдено")
+
+    if update_data.nickname is not None:
+        duplicate = db.query(models.UserPlant).filter(
+            models.UserPlant.user_id == current_user.id,
+            models.UserPlant.nickname == update_data.nickname,
+            models.UserPlant.id != plant_id,
+        ).first()
+        if duplicate:
+            raise HTTPException(status_code=400, detail="У вас уже есть растение с таким именем")
 
     for field, value in update_data.model_dump(exclude_none=True).items():
         setattr(plant, field, value)

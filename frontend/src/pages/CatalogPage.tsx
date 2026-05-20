@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { catalogApi, myPlantsApi } from '../api'
 import type { CatalogPlant } from '../types'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../store/authStore'
 
 const DIFFICULTY_OPTIONS = ['Лёгкая', 'Средняя', 'Сложная']
 
@@ -100,7 +101,7 @@ function AddPlantModal({
     try {
       const res = await myPlantsApi.add({
         catalog_plant_id: plant.id,
-        nickname: nickname || undefined,
+        nickname: nickname,
         location: location || undefined,
         added_date: addedDate,
       })
@@ -124,14 +125,18 @@ function AddPlantModal({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Наименование</label>
+            <label className="block text-sm text-gray-700 mb-1">
+              Название <span className="text-red-400">*</span>
+            </label>
             <input
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-green-500 rounded-lg"
               placeholder={plant.name}
+              required
             />
+            <p className="text-xs text-gray-400 mt-0.5">Уникальное имя — можно добавить несколько одинаковых растений</p>
           </div>
           <div>
             <label className="block text-sm text-gray-700 mb-1">Расположение</label>
@@ -182,6 +187,7 @@ function AddPlantModal({
 
 export default function CatalogPage() {
   const navigate = useNavigate()
+  const { token } = useAuthStore()
   const [plants, setPlants] = useState<CatalogPlant[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [search, setSearch] = useState('')
@@ -190,6 +196,7 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true)
   const [detailPlant, setDetailPlant] = useState<CatalogPlant | null>(null)
   const [addingPlant, setAddingPlant] = useState<CatalogPlant | null>(null)
+  const [myPlantCounts, setMyPlantCounts] = useState<Record<number, number>>({})
 
   const loadPlants = useCallback(async () => {
     setLoading(true)
@@ -210,6 +217,17 @@ export default function CatalogPage() {
   useEffect(() => {
     catalogApi.getCategories().then((r) => setCategories(r.data)).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!token) return
+    myPlantsApi.getAll().then((r) => {
+      const counts: Record<number, number> = {}
+      for (const p of r.data) {
+        counts[p.catalog_plant_id] = (counts[p.catalog_plant_id] || 0) + 1
+      }
+      setMyPlantCounts(counts)
+    }).catch(() => {})
+  }, [token])
 
   useEffect(() => {
     const timer = setTimeout(loadPlants, 300)
@@ -268,6 +286,7 @@ export default function CatalogPage() {
             <PlantCard
               key={plant.id}
               plant={plant}
+              myCount={myPlantCounts[plant.id] || 0}
               onDetail={() => setDetailPlant(plant)}
               onAdd={() => setAddingPlant(plant)}
             />
@@ -295,10 +314,12 @@ export default function CatalogPage() {
 
 function PlantCard({
   plant,
+  myCount,
   onDetail,
   onAdd,
 }: {
   plant: CatalogPlant
+  myCount: number
   onDetail: () => void
   onAdd: () => void
 }) {
@@ -322,7 +343,7 @@ function PlantCard({
       </div>
 
       <div className="p-3 flex-1">
-        <div className="flex gap-1 mb-1">
+        <div className="flex gap-1 mb-1 flex-wrap">
           {plant.category && (
             <span className="text-xs bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">{plant.category}</span>
           )}
@@ -332,6 +353,11 @@ function PlantCard({
               plant.difficulty === 'Средняя' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
               'bg-red-50 text-red-600 border-red-200'
             }`}>{plant.difficulty}</span>
+          )}
+          {myCount > 0 && (
+            <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full ml-auto">
+              ✓ {myCount} шт.
+            </span>
           )}
         </div>
         <h3 className="font-medium text-gray-900 text-sm italic">{plant.name}</h3>

@@ -12,7 +12,9 @@
       "Bash(pip install *)",
       "Bash(python make_report.py)",
       "Bash(python3 -c ' *)",
-      "PowerShell(python --version)"
+      "PowerShell(python --version)",
+      "PowerShell(docker exec plant_tracker-backend-1 python -c \"from database import SessionLocal; import models; db = SessionLocal\\(\\); plants = db.query\\(models.CatalogPlant\\).order_by\\(models.CatalogPlant.id.desc\\(\\)\\).limit\\(15\\).all\\(\\); [print\\(f'  {p.name}'\\) for p in reversed\\(plants\\)]\")",
+      "PowerShell(docker exec plant_tracker-backend-1 sh -c \"ls /app/data/uploads/catalog/ | wc -l && du -sh /app/data/uploads/catalog/\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\Mi\\.claude\\projects\\c--Users-Mi-Work-plant-tracker"

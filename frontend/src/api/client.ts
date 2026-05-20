@@ -14,7 +14,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (error) => {
-    if (error.response?.status === 401) {
+    const isDeleteAccount = error.config?.url?.includes('/auth/account') && error.config?.method === 'delete'
+    if (error.response?.status === 401 && !isDeleteAccount) {
       localStorage.removeItem('token')
       localStorage.removeItem('username')
       window.location.href = '/login'

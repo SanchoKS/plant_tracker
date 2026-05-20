@@ -41,7 +41,7 @@ class CatalogPlantBase(BaseModel):
 
 class UserPlantCreate(BaseModel):
     catalog_plant_id: int
-    nickname: Optional[str] = None
+    nickname: str
     location: Optional[str] = None
     added_date: Optional[date] = None
 

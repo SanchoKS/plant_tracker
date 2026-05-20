@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from database import get_db
 import models
@@ -18,13 +19,15 @@ def get_catalog(
     _: models.User = Depends(auth_utils.get_current_user),
 ):
     query = db.query(models.CatalogPlant)
-    if search:
-        query = query.filter(models.CatalogPlant.name.ilike(f"%{search}%"))
     if category:
         query = query.filter(models.CatalogPlant.category == category)
     if difficulty:
         query = query.filter(models.CatalogPlant.difficulty == difficulty)
-    return query.order_by(models.CatalogPlant.name).all()
+    plants = query.order_by(models.CatalogPlant.name).all()
+    if search:
+        term = search.lower()
+        plants = [p for p in plants if term in (p.name or '').lower() or term in (p.latin_name or '').lower()]
+    return plants
 
 
 @router.get("/categories")

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from database import get_db
 import models
 import schemas
@@ -22,7 +23,11 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
         password_hash=auth_utils.get_password_hash(user_data.password),
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
     db.refresh(user)
 
     token = auth_utils.create_access_token({"sub": user.username})
@@ -44,6 +49,8 @@ def delete_account(
     current_user: models.User = Depends(auth_utils.get_current_user),
     db: Session = Depends(get_db),
 ):
-    db.delete(current_user)
-    db.commit()
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if user:
+        db.delete(user)
+        db.commit()
     return {"detail": "Аккаунт удален"}
